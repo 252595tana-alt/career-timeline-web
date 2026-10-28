@@ -105,6 +105,14 @@
     next.setAttribute('aria-label','次のページ'); next.addEventListener('click',()=>show(index+1));
     pagination.append(back,count,next); slide.append(pagination);
   });
+  // One unscaled canvas per sheet keeps absolute slide coordinates intact when printing.
+  slides.forEach(slide=>{
+    if(slide.querySelector(':scope > .print-canvas')) return;
+    const canvas=document.createElement('div');
+    canvas.className='print-canvas';
+    canvas.append(...slide.childNodes);
+    slide.append(canvas);
+  });
   function setEditing(value) {
     editing = value; document.body.classList.toggle('editing',editing);
     $('edit-toggle').setAttribute('aria-pressed',String(editing));

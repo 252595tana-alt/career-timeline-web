@@ -81,28 +81,25 @@ button:disabled{cursor:default;opacity:.5}
 :fullscreen .exit-fullscreen{display:block}
 @media(max-width:900px){.toolbar{padding:10px 14px;gap:12px}.toolbar-actions{gap:6px}.toolbar button,.toolbar select{padding:7px 9px}.document-label>span{display:none}.stage{padding:12px}.storage-note{display:none}.statusbar{padding:5px 14px}}
 @media(max-width:640px){.toolbar{align-items:flex-start;flex-direction:column;gap:9px}.document-label strong{font-size:13px}.toolbar-actions{width:100%}.toolbar button,.toolbar select{font-size:11px;padding:6px 8px;min-height:36px}.edit-help{padding:8px 14px;align-items:flex-start;flex-direction:column;gap:6px;font-size:11px}.stage{padding:8px}}
-@page{size:13.333333in 7.5in;margin:0}
+
+
+.print-canvas{display:contents}
+@page{size:A4 landscape;margin:8mm}
 @media print{
-  html,body{width:1280px;height:auto;display:block;margin:0;padding:0;overflow:visible;background:#fff}
+  :root{color-scheme:only light}
+  html,body{width:281mm;height:auto;display:block;margin:0;padding:0;overflow:visible;background:#fff!important;color-scheme:only light}
   .appbar,.statusbar,.toast,.exit-fullscreen{display:none!important}
-  .stage{display:block;overflow:visible;padding:0;height:auto}
-  .viewport{width:1280px!important;height:auto!important;margin:0;box-shadow:none}
-  .deck{position:static;transform:none!important;width:1280px;height:auto}
-  .slide,.slide[hidden]{display:block!important;width:1280px;height:720px;break-after:page;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-  .slide:last-child{break-after:auto}
+  .stage,.viewport,.deck{display:block!important;position:static!important;width:281mm!important;height:auto!important;min-height:0;margin:0;padding:0;overflow:visible!important;transform:none!important;box-shadow:none!important;background:#fff!important}
+  /* A4 landscape printable area: 281 x 194 mm. Leave 0.2 mm for pagination rounding. */
+  .slide,.slide[hidden]{display:block!important;position:relative;width:281mm;height:193.8mm;margin:0;padding:0;overflow:hidden;background:#fff!important;break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .slide:last-child{break-after:auto;page-break-after:auto}
+  /* Scale the original 1280 x 720 canvas uniformly, then center it on the sheet. */
+  .print-canvas{display:block;position:absolute;left:50%;top:50%;width:1280px;height:720px;transform:translate(-50%,-50%) scale(0.8297244);transform-origin:center;background-color:#fff;background-image:var(--background-body);background-size:100% 100%;background-repeat:no-repeat;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+  .slide--cover .print-canvas{background-image:var(--background-cover)}
+  .slide--cover::before{content:none!important;display:none!important}
   .pagination button{display:none}
   .editable{outline:none!important;background:transparent!important}
-}
-
-
-/* Keep print rendering on an opaque light canvas; masked layers can turn black in WebKit. */
-@media print {
-  :root { color-scheme: only light; }
-  html, body, .stage, .viewport, .deck, .slide { background-color:#fff!important; color-scheme:only light; }
-  .stage, .viewport, .deck { position:static!important; overflow:visible!important; }
-  .slide--cover::before { content:none!important; display:none!important; }
-  .slide { isolation:isolate; box-shadow:none!important; }
-  .graphic-layer { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .graphic-layer{print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
 </style>
 </head>
@@ -289,6 +286,14 @@ button:disabled{cursor:default;opacity:.5}
     const next = document.createElement('button'); next.type='button'; next.textContent='次へ'; next.hidden=index===slides.length-1;
     next.setAttribute('aria-label','次のページ'); next.addEventListener('click',()=>show(index+1));
     pagination.append(back,count,next); slide.append(pagination);
+  });
+  // One unscaled canvas per sheet keeps absolute slide coordinates intact when printing.
+  slides.forEach(slide=>{
+    if(slide.querySelector(':scope > .print-canvas')) return;
+    const canvas=document.createElement('div');
+    canvas.className='print-canvas';
+    canvas.append(...slide.childNodes);
+    slide.append(canvas);
   });
   function setEditing(value) {
     editing = value; document.body.classList.toggle('editing',editing);
