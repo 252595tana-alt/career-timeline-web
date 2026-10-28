@@ -94,6 +94,16 @@ button:disabled{cursor:default;opacity:.5}
   .editable{outline:none!important;background:transparent!important}
 }
 
+
+/* Keep print rendering on an opaque light canvas; masked layers can turn black in WebKit. */
+@media print {
+  :root { color-scheme: only light; }
+  html, body, .stage, .viewport, .deck, .slide { background-color:#fff!important; color-scheme:only light; }
+  .stage, .viewport, .deck { position:static!important; overflow:visible!important; }
+  .slide--cover::before { content:none!important; display:none!important; }
+  .slide { isolation:isolate; box-shadow:none!important; }
+  .graphic-layer { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+}
 </style>
 </head>
 <body>
@@ -338,7 +348,14 @@ button:disabled{cursor:default;opacity:.5}
     setTimeout(()=>URL.revokeObjectURL(url),30000);
     exportDone=true; toast('編集内容を含むHTMLを保存しました。保存したファイルを開くと編集内容が残ります。');
   });
-  $('print').addEventListener('click',()=>{ if(editing) setEditing(false); window.print(); });
+  $('print').addEventListener('click',async()=>{
+    if(editing) setEditing(false);
+    if(document.fullscreenElement) await document.exitFullscreen();
+    await document.fonts?.ready;
+    // Let editing/fullscreen layout changes settle before the print snapshot.
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    window.print();
+  });
   $('fullscreen').addEventListener('click',async()=>{
     try { if(document.fullscreenElement) await document.exitFullscreen(); else if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else toast('このブラウザは全画面操作に対応していません。'); }
     catch { toast('全画面に切り替えられませんでした。ブラウザの全画面機能をご利用ください。'); }

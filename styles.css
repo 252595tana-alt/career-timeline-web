@@ -82,3 +82,13 @@ button:disabled{cursor:default;opacity:.5}
   .pagination button{display:none}
   .editable{outline:none!important;background:transparent!important}
 }
+
+/* Keep print rendering on an opaque light canvas; masked layers can turn black in WebKit. */
+@media print {
+  :root { color-scheme: only light; }
+  html, body, .stage, .viewport, .deck, .slide { background-color:#fff!important; color-scheme:only light; }
+  .stage, .viewport, .deck { position:static!important; overflow:visible!important; }
+  .slide--cover::before { content:none!important; display:none!important; }
+  .slide { isolation:isolate; box-shadow:none!important; }
+  .graphic-layer { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+}

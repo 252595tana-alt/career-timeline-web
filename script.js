@@ -163,7 +163,14 @@
     setTimeout(()=>URL.revokeObjectURL(url),30000);
     exportDone=true; toast('編集内容を含むHTMLを保存しました。保存したファイルを開くと編集内容が残ります。');
   });
-  $('print').addEventListener('click',()=>{ if(editing) setEditing(false); window.print(); });
+  $('print').addEventListener('click',async()=>{
+    if(editing) setEditing(false);
+    if(document.fullscreenElement) await document.exitFullscreen();
+    await document.fonts?.ready;
+    // Let editing/fullscreen layout changes settle before the print snapshot.
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    window.print();
+  });
   $('fullscreen').addEventListener('click',async()=>{
     try { if(document.fullscreenElement) await document.exitFullscreen(); else if(document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else toast('このブラウザは全画面操作に対応していません。'); }
     catch { toast('全画面に切り替えられませんでした。ブラウザの全画面機能をご利用ください。'); }
